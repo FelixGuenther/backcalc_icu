@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage[ngerman]{babel, varioref}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Back-calculation of ICU admissions from time-series of occupied beds}
+\author{Felix G{\"u}nther$^1$}
+\date{$^1$ Statistical Consulting Unit StaBLab, Department of Statistics, LMU Munich}
+\maketitle
+
+\section*{Methods}
+We are interested in estimating the daily number of new ICU admissions $I_t$ in a specific region based on the observed number of occupied ICU beds per day $B_t=b_t$, where $t=1,\ldots,T$.
+
+
+Let $N$ be the number of individuals $i=1,\ldots,N$ that occupied a bed at some time-point $t<T$, and $LOS_i$ be the length of the ICU stay (number of days an individual occupied a bed in the ICU) of individual $I$.
+
+
+We assume, that the LOS follows a discrete distribution $F_{\theta}$, where $P(LOS_i=k) = \theta_k, \; k=0,...,K$ and $\sum_{k=0}^K\theta_k=1$. Additionally we define the probability $P(LOS_i > k) = 1-\sum_{l=1}^k\theta_l=\eta_k$.
+
+
+Let $A_i$ be the admission day of individual $i$, and $S_i$ be an individual-specific binary vector of length $T$ with entry $S_{i,t}=1$ if individual $i$ is occupying a bed at the ICU on day $t$ and $S_{i,t}=0$, if not:
+$$
+S_{i,t}= \begin{cases}
+    1,& \text{if } A_i\leq t  \leq A_i+LOS_i\\
+    0,              & \text{otherwise}
+\end{cases}
+$$
+
+Based on these definitions, the observed number of occupied ICU beds on day $t$ corresponds to
+$$
+b_t = \sum_{i=1}^N S_{i,t} = \sum_{i=1}^N \mathds{1}(A_i\leq t  \leq A_i+LOS_i) = \sum_{i=1}^N \mathds{1}(A_i\leq t)  \mathds{1}(LOS_i\geq t-A_i) 
+$$
+and the unobserved number of new ICU admissions $I_t$ are
+$$
+I_t = \sum_{i=1}^N \mathds{1}(A_i=t).
+$$
+
+The estimation of $I_t$ based on the observed $B_t=b_t$ is closely related to the estimation of an inverse convolution or \textit{backprojection} methods. We assume, that the latent number of new ICU admissions on day $t$, $I_t$, are Poisson distributed with expectation $\lambda_t$. The observed number of occupied beds on day $t$ are then Poisson distributed as well:
+$$
+B_t\sim\text{Pois}(\sum_{k=0}^K\lambda_{t-k}\eta_k),
+$$
+where $\eta_k$ is known based on the assumed $LOS$-distribution $F_\theta$.
+
+
+Based on this assumed distribution of the observed data $B_t=b_t$ we set up a Bayesian hierarchical model to estimate the expected number of new ICU admissions based on the data $B=b=(b_1,\ldots,b_T)$. Since the number of to be estimated parameters $\lambda=(\lambda_1,\ldots,\lambda_T)$ is the same as the number of observed data points $b$, this is close to not identifiable. We therefore impose regularization on the estimated $\lambda_t$ assuming a smooth change in the daily number of new ICU admissions by setting up a Bayesian hierarchical model
+\begin{eqnarray*}
+\lambda_1  \sim & \text{Prior}(\phi) \\
+\sigma_{rw}  \sim & \text{Half-N}(0, 10) \\
+\lambda_t | \lambda_{t-1}  \sim & N(\lambda_{t-1}, \sigma_{rw}), \; t=2,\ldots, T \\
+B_t | \lambda \sim &\text{Pois}(\sum_{k=0}^K\lambda_{t-k}\eta_k)
+\end{eqnarray*}
+and estimate $\lambda$ by MCMC sampling.
+\end{document}
