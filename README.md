@@ -1,4 +1,4 @@
-## Code to estimate the daily numbers of new ICU admissions from from the number of occupied beds
+## Code to estimate the daily numbers of new ICU admissions from the number of occupied beds
 This repository contains code and data to estimate the daily numbers of new ICU admissions from the number of occupied beds in Germany and German federal states based on data provided by the DIVI.
 
 The developed Bayesian hierarchical model is presented in the .pdf **methods_back_calculation.pdf** in the *methods* Folder.
