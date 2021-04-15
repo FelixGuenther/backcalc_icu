@@ -6,4 +6,4 @@ The other folders consist of:
 
   - **code**: Code for performing the back-calculation based on the DIVI data in Germany and the separate federal states, including the STAN-code for the Bayesian hierarchical model. For the German data we compare the results of the back-calculation with the true (known) number of new admissions per day
   - **data**: Contains the DIVI data on the number of occupied ICU beds
-  - **results**: Contains two figures of the central results of the back-calculation
+  - **results**: Contains results of the back-calculation

@@ -1,26 +1,29 @@
 \documentclass{article}
-\usepackage[ngerman]{babel, varioref}
+\usepackage[english]{babel, varioref}
 \usepackage[T1]{fontenc}
 \usepackage[latin1]{inputenc}
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{dsfont}
+\usepackage{hyperref}
+\usepackage[left=2.5cm, right=2.5cm]{geometry}
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 
-\title{Back-calculation of ICU admissions from time-series of occupied beds}
-\author{Felix G{\"u}nther$^1$}
-\date{$^1$ Statistical Consulting Unit StaBLab, Department of Statistics, LMU Munich}
+\title{Back-calculation of the daily number of new ICU admissions from observed time series of occupied beds}
+\author{Felix G{\"u}nther$^1$, Helmut K{\"u}chenhoff$^1$}
+\date{$^1$Statistical Consulting Unit StaBLab, Department of Statistics, LMU Munich}
 \maketitle
 
 \section*{Methods}
+\subsection*{Basic method for the estimation of the expected number of new ICU admissions}
 We are interested in estimating the daily number of new ICU admissions $I_t$ in a specific region based on the observed number of occupied ICU beds per day $B_t=b_t$, where $t=1,\ldots,T$.
 
 
-Let $N$ be the number of individuals $i=1,\ldots,N$ that occupied a bed at some time-point $t<T$, and $LOS_i$ be the length of the ICU stay (number of days an individual occupied a bed in the ICU) of individual $I$.
+Let $N$ be the number of individuals $i=1,\ldots,N$ that occupied a bed at some time-point $t<T$, and $LOS_i$ be the length of the ICU stay (number of days an individual occupied a bed in the ICU) of individual $i$.
 
 
-We assume, that the LOS follows a discrete distribution $F_{\theta}$, where $P(LOS_i=k) = \theta_k, \; k=0,...,K$ and $\sum_{k=0}^K\theta_k=1$. Additionally we define the probability $P(LOS_i > k) = 1-\sum_{l=1}^k\theta_l=\eta_k$.
+We assume, that the LOS follows a discrete distribution $F_{\theta}$, where $P(LOS_i=k) = \theta_k, \; k=0,...,K$ and $\sum_{k=0}^K\theta_k=1$. Additionally we define the probability $P(LOS_i > k) = 1-\sum_{l=0}^k\theta_l=\eta_k$.
 
 
 Let $A_i$ be the admission day of individual $i$, and $S_i$ be an individual-specific binary vector of length $T$ with entry $S_{i,t}=1$ if individual $i$ is occupying a bed at the ICU on day $t$ and $S_{i,t}=0$, if not:
@@ -48,11 +51,46 @@ where $\eta_k$ is known based on the assumed $LOS$-distribution $F_\theta$.
 
 
 Based on this assumed distribution of the observed data $B_t=b_t$ we set up a Bayesian hierarchical model to estimate the expected number of new ICU admissions based on the data $B=b=(b_1,\ldots,b_T)$. Since the number of to be estimated parameters $\lambda=(\lambda_1,\ldots,\lambda_T)$ is the same as the number of observed data points $b$, this is close to not identifiable. We therefore impose regularization on the estimated $\lambda_t$ assuming a smooth change in the daily number of new ICU admissions by setting up a Bayesian hierarchical model
-\begin{eqnarray*}
-\lambda_1  \sim & \text{Prior}(\phi) \\
-\sigma_{rw}  \sim & \text{Half-N}(0, 10) \\
-\lambda_t | \lambda_{t-1}  \sim & N(\lambda_{t-1}, \sigma_{rw}), \; t=2,\ldots, T \\
-B_t | \lambda \sim &\text{Pois}(\sum_{k=0}^K\lambda_{t-k}\eta_k)
-\end{eqnarray*}
-and estimate $\lambda$ by MCMC sampling.
+\begin{align*}
+\lambda_1  & \sim \text{Prior}(\phi) \\
+\sigma_{rw}  & \sim \text{Half-N}(0, .2) \\
+\text{log}(\lambda_t) | \lambda_{t-1}  & \sim N(\text{log}(\lambda_{t-1}), \sigma_{rw}), \; t=2,\ldots, T \\
+B_t | \lambda & \sim \text{Pois}(\sum_{k=0}^K\lambda_{t-k}\eta_k)
+\end{align*}
+and estimate the expected number of new ICU admissions per day, $\lambda_t\;t=1,\ldots,T$, based on MCMC sampling.
+
+\subsection*{Adjustment for changes in the length-of-stay distribution}
+A central assumption required for estimating the expected number of new ICU admissions per day from a time-series of occupied beds is the length-of-stay distribution, that describes the frequencies of the duration of ICU stays in the target population accurately. Our analysis of the German ICU situation is based on data provided by the DIVI\footnote{\url{https://www.divi.de/register/tagesreport}} on a daily basis. Since no further information on the composition of ICU patients, e.g., in terms of their age or pre-existing conditions, is available in the general DIVI occupancy data, we use a log-normal distribution with time-constant parameters as basis of our calculations. The parameters of which are chosen so that the median equals 5 and the 25\%-quantile equals 2. These quantiles were chosen based on empirical information on the average duration of ICU treatments from a publication by the German Robert-Koch Institute\footnote{Tolksdorf et al. (2020). \textit{Eine h{\"o}here Letalit{\"a}t und lange Beatmungsdauer unterscheiden COVID-19 von schwer verlaufenden Atemwegsinfektionen in Grippewellen.} \url{https://edoc.rki.de/handle/176904/6952}}. Since we analyze daily numbers, this distribution is additionally discretized and truncated to the range of 0 to 40 days.
+
+
+In the DIVI data, the number of daily new admissions to intensive care units is reported for Germany as a whole in addition to the number of occupied beds, but not for the individual German states in which we are actually interested in. It should be noted that these figures also include transfers between different ICUs. Nevertheless, these figures can be used to check the plausibility of the results of the back calculation.
+
+Figure \ref{fig1} shows the data as of April 12, 2021, and smooth estimates of the expected number of daily admissions (Poisson distributed) using (i) a smoothing spline estimated from the observed numbers of daily admissions and (ii) based on the occupancy data using the back calculation method as described above. It is evident that the estimation of daily admissions based on occupied beds works well during the period from November to early March, and the results agree well with direct modeling of admission numbers. After that, the results of the estimates diverge and the estimate based on occupancy numbers leads to an overestimation of the expected number of daily new admissions. This is likely due to changes in the length of stay distribution, e.g., due to an increased number of admissions of younger patients to the ICUs with lower lethality and thus generally longer treatment duration and/or changes in the clinical picture due to the B1.1.7 variant.
+
+\begin{figure}[ht]
+\includegraphics[width=\textwidth]{./figures/germany_bestand_neuaufnahmen_210412_english.png}
+\caption{Presentation of DIVI data for the whole of Germany (as of April 12, 2021). Panel A shows the time series of the number of occupied intensive care beds in Germany. Panel B shows the number of reported daily admissions (dashed line), as well as smooth estimates of the expected number of daily admissions (Poisson distributed) using (i) a smoothing spline estimated from the observed number of daily admissions (green line), and (ii) based on the occupancy data as described above (purple line).}
+\label{fig1}
+\end{figure}
+
+This is particularly problematic for our state-level estimates, where true data on actual daily new admissions are not available and thus we rely on back-calculation from occupancy data to assess current infection dynamics. 
+
+Based on Figure \ref{fig1}, however, a simple correction possibility for the estimate of new admissions can be derived. Let $\hat{\lambda}_t^{new}$ be the estimate of expected new admissions from reported new admissions using the smoothing spline (green curve) and $\hat{\lambda}_t^{occu}$ the estimate from occupancy data (purple curve). We can calculate a daily correction factor $c_t=\hat{\lambda}_t^{new}/\hat{\lambda}_t^{occu}$.
+
+Assuming a similar bias in the estimated (expected) number of ICU admissions in each federal state as in the whole of Germany, we can correct the estimated $\hat{\lambda}_t^{occu, j}$ of each federal state $j$ by multiplying with $c_t$. A comparison of the estimated expected number of new ICU admissions and the adjusted version is given in Figure \ref{fig2}. Note that the aggregated daily sum of the adjusted estimates yields an estimate of $\hat{\lambda}_t$ for the whole of Germany that is similar to $\hat{\lambda}_t^{new}$ estimated from the reported number of new admissions in Germany (Figure \ref{fig3}) as desired.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.9\textwidth]{./figures/fedstate_neuaufnahmen_icu_model_adjusted_210412_en.png}
+\caption{Estimated expected number of daily new ICU admissions in German federal states based on the reported number of occupied beds (purple) and adjusted with the daily correction factor $c_t$ (green).}
+\label{fig2}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.9\textwidth]{./figures/fedstate_neuaufnahmen_aggregated_210412.png}
+\caption{Estimated expected number of daily new ICU admissions in Germany. Black: estimated base on reported number of new ICU admissions in Germany by the DIVI. Purple: sum of unadjusted daily estimates of the federal states (see Figure \ref{fig2}). Green: Sum of adjusted daily estimates for the federal states (see Figure \ref{fig2}).}
+\label{fig3}
+\end{figure}
+
 \end{document}
