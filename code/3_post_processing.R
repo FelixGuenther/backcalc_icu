@@ -2,7 +2,7 @@ library(tidyverse)
 library(lubridate)
 library(zoo)
 theme_set(theme_bw())
-date = ymd("2021-04-14")
+date = ymd("2021-04-27")
 
 dat_ger = read_tsv(paste0("../data/", date, "_divi_ger_reports.csv"))
 dat_ger_res = read_tsv(paste0("../results/", date, "_backpro_ger_res.csv"))
@@ -12,12 +12,12 @@ dat_fed = read_tsv(paste0("../results/", date, "_backpro_fed_state.csv"))
 bel_smooth = mgcv::gam(icu_new ~ s(t), family = "poisson", data = dat_ger %>% mutate(t=1:n()))
 
 dat_ger_sm = dat_ger %>% select(date) %>%
-  mutate(icu_new_smooth_ex = exp(predict(bel_smooth, newdata = tibble(t=1:174))),
+  mutate(icu_new_smooth_ex = exp(predict(bel_smooth, newdata = tibble(t=1:n()))),
          icu_new_smooth_ex_lwr = exp(log(icu_new_smooth_ex) - 
-                                       2*predict(bel_smooth, newdata = tibble(t=1:174),
+                                       2*predict(bel_smooth, newdata = tibble(t=1:n()),
                                                  se.fit = T)[[2]]),
          icu_new_smooth_ex_upr = exp(log(icu_new_smooth_ex) + 
-                                       2*predict(bel_smooth, newdata = tibble(t=1:174),
+                                       2*predict(bel_smooth, newdata = tibble(t=1:n()),
                                                  se.fit = T)[[2]]))
 
 dat_ger_sm %>% rename(est=icu_new_smooth_ex, q025=icu_new_smooth_ex_lwr, q975=icu_new_smooth_ex_upr) %>%

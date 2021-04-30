@@ -3,7 +3,7 @@ library(lubridate)
 library(rstan)
 library(zoo)
 options(mc.cores = 4)
-day = ymd("2021-04-14")
+day = ymd("2021-04-27")
 dat = read_tsv(paste0("../data/", day, "_divi_ger_reports.csv"))
 
 stay_dist = readRDS("./stay_dist_rki.rds")
